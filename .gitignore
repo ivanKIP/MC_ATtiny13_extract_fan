@@ -43,6 +43,11 @@
 *.pdb
 *.sym*
 *.str*
+*.cci
+*.cfg
+*.cproj
+*.cwp
+*.fct
 
 # Kernel Module Compile Results
 *.mod*
