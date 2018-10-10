@@ -48,6 +48,8 @@
 *.cproj
 *.cwp
 *.fct
+*.atsln
+*~
 
 # Kernel Module Compile Results
 *.mod*
