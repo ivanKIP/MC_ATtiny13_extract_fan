@@ -38,6 +38,7 @@
 
 # Debug files
 *.dSYM/
+Debug/List/
 *.su
 *.idb
 *.pdb
@@ -50,6 +51,8 @@
 *.fct
 *.atsln
 *~
+*.rom
+*.aws
 
 # Kernel Module Compile Results
 *.mod*
