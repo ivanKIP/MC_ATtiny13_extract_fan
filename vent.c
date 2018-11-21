@@ -21,13 +21,15 @@ Data Stack size         : 16
 
 #include <tiny13a.h>
 #include <delay.h>
+#include <math.h>
 
 // Global variables
 #define IN_V PINB.3             // Вход №1 (ванная)
 #define IN_T PINB.4             // Вход №2 (туалет)
 #define OUT PORTB.0             // Выход 1 (вкл. вентилятор)
 #define SELF_PWR PORTB.1        // Выход 2 (вкл. подхват питания)
-#define DELAY_TO_ON 20          // Задержка от вкл. света до вкл. вентилятора (сек.)
+#define DELAY_TO_ON_V 40        // Задержка от вкл. света в ванной (IN_V) до вкл. вентилятора (сек.)
+#define DELAY_TO_ON_T 20        // Задержка от вкл. света в туалете (IN_T) до вкл. вентилятора (сек.)
 #define DELAY_TO_OFF_V 180      // Задержка после выкл. света в ванной до выкл. вентилятора (сек.)
 #define DELAY_TO_OFF_T 120      // Задержка после выкл. света в туалете до выкл. вентилятора (сек.)
 unsigned int cnt = 0;           // Счетчик "тиков" (переполнений таймера)
@@ -107,6 +109,7 @@ void power_off(void)
 void main(void)
 {
 	// Local variables
+    int max_delay_to_on = max(DELAY_TO_ON_V, DELAY_TO_ON_T);    // Максимальная задержка на включение
     
 	// Crystal Oscillator division factor: 8
     #pragma optsize-
@@ -207,8 +210,8 @@ void main(void)
             in_v_cnt = 0;
             in_t_cnt = 0;
             
-            // Выключение если свет отключили до истечения задержки включения
-            if (!OUT && !in_v_on && !in_t_on && !time_cnt_res && time_cnt < DELAY_TO_ON) {
+            // Отключение схемы если свет отключили до истечения задержки включения
+            if (!OUT && !in_v_on && !in_t_on && !time_cnt_res && time_cnt < max_delay_to_on) {
                 power_off();
             }
         }
@@ -223,9 +226,17 @@ void main(void)
 
         // Включение вентилятора
         // если он не включен,
-        // включен любой свет
+        // включен свет в ванной
         // и счетчик секунд уже больше задержки включения
-        if (!OUT && (in_v_on || in_t_on) && time_cnt >= DELAY_TO_ON) {
+        if (!OUT && in_v_on && time_cnt >= DELAY_TO_ON_V) {
+            OUT = 1;
+        }
+        
+        // Включение вентилятора
+        // если он не включен,
+        // включен свет в туалете
+        // и счетчик секунд уже больше задержки включения
+        if (!OUT && in_t_on && time_cnt >= DELAY_TO_ON_T) {
             OUT = 1;
         }
 
