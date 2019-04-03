@@ -21,7 +21,7 @@ OutputExecutableFilesDirectory=Release\Exe
 OutputLinkerFilesDirectory=Release\Link
 AllowDisplayFunctionCallTree=1
 CleanUp=2
-TimeStamp1=1297507586
+TimeStamp1=1317229541
 [CompilerDebug]
 Chip=ATtiny13A
 CPUClock=1200000
@@ -126,8 +126,8 @@ UseEEPROMLocation0=1
 DisplayCodeSizeError=1
 RebuildAll=0
 LinkageInformationPresent=1
-COFFileTimeStamp=1299539496
-Build=63
+COFFileTimeStamp=1317229544
+Build=70
 GlobalVarAddr=116
 EEPROMVarAddr=0
 [DefinedSymbolsDebug]
@@ -237,7 +237,7 @@ DisplayCodeSizeError=1
 RebuildAll=1
 LinkageInformationPresent=0
 COFFileTimeStamp=-1
-Build=63
+Build=70
 [DefinedSymbols]
 Count=0
 [CompilerAdvanced]
@@ -351,8 +351,8 @@ L11=8 bit enums: Yes
 L12=Enhanced function parameters passing: Mode 2
 L13=Automatic register allocation: Yes
 L14=
-L15=Build: 63
-L16=7742 line(s) compiled
+L15=Build: 69
+L16=7747 line(s) compiled
 L17=No errors
 L18=No warnings
 L19=
@@ -373,18 +373,18 @@ L33=Heap size: 0 byte(s)
 L34=
 L35=EEPROM usage: 0 byte(s), 0,0% of EEPROM
 Lines=37
-L36=Program size: 335 words (670 bytes), 65,4% of FLASH
+L36=Program size: 349 words (698 bytes), 68,2% of FLASH
 L37=1 words (2 bytes), 0,3% reduced by Code Compression
 [BuildInfoAssembler]
 L1=AVRASM: AVR macro assembler 2.1.30 (build 592 Nov  7 2008 12:38:17)
 L2=Copyright (C) 1995-2008 ATMEL Corporation
 L3=
-L4=E:\СЛАП\C\IvanKo\Радио\Микроконтроллер\MC_ATtiny13_extract_fan\Debug\List\vent.asm(1777): No EEPROM data, deleting E:\СЛАП\C\IvanKo\Радио\Микроконтроллер\MC_ATtiny13_extract_fan\Debug\Exe\vent.eep
+L4=E:\СЛАП\C\IvanKo\Радио\Микроконтроллер\MC_ATtiny13_extract_fan\Debug\List\vent.asm(1797): No EEPROM data, deleting E:\СЛАП\C\IvanKo\Радио\Микроконтроллер\MC_ATtiny13_extract_fan\Debug\Exe\vent.eep
 L5=
 L6=ATtiny13A memory use summary [bytes]:
 L7=Segment   Begin    End      Code   Data   Used    Size   Use%
 L8=---------------------------------------------------------------
-L9=[.cseg] 0x000000 0x00029e    628     42    670    1024  65.4%
+L9=[.cseg] 0x000000 0x0002ba    656     42    698    1024  68.2%
 L10=[.dseg] 0x000060 0x000074      0      4      4      64   6.3%
 L11=[.eseg] 0x000000 0x000000      0      0      0      64   0.0%
 L12=
@@ -395,16 +395,17 @@ Row=0
 Column=0
 ScrollPosX=0
 ScrollPosY=0
-TimeStamp=1297580950
+TimeStamp=1317229546
 [BookmarksFoldedCode]
-Files=1
+Files=2
 F1=vent.c
+F2=C:\Programs\cvavreval\inc\math.h
 [Bookmarks1]
-TimeStamp=1297507586
-Row=110
+TimeStamp=1317229541
+Row=111
 Column=0
 ScrollPosX=0
-ScrollPosY=132
+ScrollPosY=97
 BK0=-1
 BK1=-1
 BK2=-1
@@ -415,7 +416,23 @@ BK6=-1
 BK7=-1
 BK8=-1
 BK9=-1
-[FoldedCode1]
+[Bookmarks2]
+TimeStamp=977953859
+Row=0
+Column=0
+ScrollPosX=0
+ScrollPosY=15
+BK0=-1
+BK1=-1
+BK2=-1
+BK3=-1
+BK4=-1
+BK5=-1
+BK6=-1
+BK7=-1
+BK8=-1
+BK9=-1
+[FoldedCode2]
 Blocks=0
 [HeadersList]
 Files=1
@@ -426,3 +443,5 @@ F1=C:\Programs\cvavreval\inc\tiny13a.h
 F2=C:\Programs\cvavreval\inc\tiny13a_bits.h
 F3=C:\Programs\cvavreval\inc\delay.h
 F4=C:\Programs\cvavreval\inc\math.h
+[FoldedCode1]
+Blocks=0

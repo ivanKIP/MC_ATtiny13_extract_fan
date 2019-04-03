@@ -5,8 +5,8 @@ Automatic Program Generator
 http://www.hpinfotech.com
 
 Project : Вентилятор ванна+туалет
-Version : 1.0
-Date    : 17.09.2018
+Version : 1.1
+Date    : 01.04.2019
 Author  : ivan_kip
 Company :
 Comments:
@@ -30,8 +30,8 @@ Data Stack size         : 16
 #define SELF_PWR PORTB.1        // Выход 2 (вкл. подхват питания)
 #define DELAY_TO_ON_V 40        // Задержка от вкл. света в ванной (IN_V) до вкл. вентилятора (сек.)
 #define DELAY_TO_ON_T 20        // Задержка от вкл. света в туалете (IN_T) до вкл. вентилятора (сек.)
-#define DELAY_TO_OFF_V 180      // Задержка после выкл. света в ванной до выкл. вентилятора (сек.)
-#define DELAY_TO_OFF_T 120      // Задержка после выкл. света в туалете до выкл. вентилятора (сек.)
+#define DELAY_TO_OFF_V 210      // Задержка после выкл. света в ванной до выкл. вентилятора (сек.)
+#define DELAY_TO_OFF_T 80       // Задержка после выкл. света в туалете до выкл. вентилятора (сек.)
 unsigned int cnt = 0;           // Счетчик "тиков" (переполнений таймера)
 unsigned char in_v_cnt = 0;     // Счетчик переключений IN_V
 unsigned char in_t_cnt = 0;     // Счетчик переключений IN_T
@@ -93,7 +93,7 @@ void check_in_t(void)
     delay_us(100);
 }
 
-// Отключение питания с переходом в спящий режим
+// Отключение питания с ожиданием завершения переходных процессов
 void power_off(void)
 {
     stop_timer();
@@ -103,13 +103,14 @@ void power_off(void)
     time_cnt_res = 0;
     in_v_cnt = 0;
     in_t_cnt = 0;
-    #asm("sleep");
+    delay_ms(2000);
+//    #asm("sleep");
 }
 
 void main(void)
 {
-	// Local variables
-    int max_delay_to_on = max(DELAY_TO_ON_V, DELAY_TO_ON_T);    // Максимальная задержка на включение
+    // Максимальная задержка на включение
+    int max_delay_to_on = max(DELAY_TO_ON_V, DELAY_TO_ON_T);
     
 	// Crystal Oscillator division factor: 8
     #pragma optsize-
@@ -220,6 +221,10 @@ void main(void)
         // сбрасываем признак последнего выключенного
         // и флаг сброса счетчика секунд
         if (in_v_on || in_t_on) {
+            // Если мы уже выключили самоподхват - включаем его
+            if (!SELF_PWR) {
+                SELF_PWR = 1;
+            }
             last_off = 0;
             time_cnt_res = 0;
         }
