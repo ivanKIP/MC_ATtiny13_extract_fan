@@ -39,7 +39,8 @@ bit in_v_rev = 0;               // Флаг переключения IN_V
 bit in_t_rev = 0;               // Флаг переключения IN_T
 bit in_v_on = 0;                // Признак включения IN_V
 bit in_t_on = 0;                // Признак включения IN_T
-int time_cnt = 0;               // Счетчик секунд
+bit in_v_after_t = 0;           // Признак включения света в ванной после туалета
+unsigned int time_cnt = 0;      // Счетчик секунд
 unsigned char last_off = 0;     // Метка последнего выключенного (1 - IN_V; 2 - IN_T)
 bit time_cnt_res = 0;           // Флаг сброса счетчика секунд
 
@@ -100,6 +101,7 @@ void power_off(void)
     SELF_PWR = 0;
     cnt = 0;
     time_cnt = 0;
+    in_v_after_t = 0;
     time_cnt_res = 0;
     in_v_cnt = 0;
     in_t_cnt = 0;
@@ -110,7 +112,7 @@ void power_off(void)
 void main(void)
 {
     // Максимальная задержка на включение
-    int max_delay_to_on = max(DELAY_TO_ON_V, DELAY_TO_ON_T);
+    unsigned int max_delay_to_on = max(DELAY_TO_ON_V, DELAY_TO_ON_T);
     
 	// Crystal Oscillator division factor: 8
     #pragma optsize-
@@ -191,6 +193,12 @@ void main(void)
             } else {
                 if (in_v_on && !in_t_on) {
                     last_off = 1;
+                    // Если свет в ванной был включен и выключен после туалета
+                    // и время на включение вентилятора для ванной еще не вышло,
+                    // то оставляем признак последнего выключенного для туалета
+                    if (in_v_after_t && time_cnt < DELAY_TO_ON_V) {
+                        last_off = 2;
+                    }
                 }
                 in_v_on = 0;
             }
@@ -200,6 +208,7 @@ void main(void)
             // инчае - выключен
             if (in_t_cnt >= 45) {
                 in_t_on = 1;
+                in_v_after_t = 0;
             } else {
                 if (in_t_on && !in_v_on) {
                     last_off = 2;
@@ -212,7 +221,7 @@ void main(void)
             in_t_cnt = 0;
             
             // Отключение схемы если свет отключили до истечения задержки включения
-            if (!OUT && !in_v_on && !in_t_on && !time_cnt_res && time_cnt < max_delay_to_on) {
+            if (!OUT && !in_v_on && !in_t_on && time_cnt < max_delay_to_on) {
                 power_off();
             }
         }
@@ -225,8 +234,16 @@ void main(void)
             if (!SELF_PWR) {
                 SELF_PWR = 1;
             }
+            // Если включили свет в ванной сразу после туалета -
+            // устанавливаем соответствующий признак и сбрасываем счетчик секунд
+            if (in_v_on && !in_v_after_t && last_off == 2) {
+                in_v_after_t = 1;
+                time_cnt = 0;
+            } else if (in_v_on && in_v_after_t && last_off == 2) {
+                in_v_after_t = 0;
+            }
+            time_cnt_res = in_v_after_t;
             last_off = 0;
-            time_cnt_res = 0;
         }
 
         // Включение вентилятора
