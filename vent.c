@@ -1,8 +1,8 @@
 /*******************************************************
-This program was created by the CodeWizardAVR V3.33
+This program was created by the CodeWizardAVR V4.03 
 Automatic Program Generator
-© Copyright 1998-2018 Pavel Haiduc, HP InfoTech s.r.l.
-http://www.hpinfotech.com
+© Copyright 1998-2024 Pavel Haiduc, HP InfoTech S.R.L.
+http://www.hpinfotech.ro
 
 Project : Вентилятор ванна+туалет
 Version : 1.1
@@ -18,31 +18,32 @@ Memory model            : Tiny
 External RAM size       : 0
 Data Stack size         : 16
 *******************************************************/
+#define F_CPU 1200000UL         // Частота микроконтроллера: 1.2 МГц (9,6 с делителем 8)
 
 #include <tiny13a.h>
 #include <delay.h>
-#include <math.h>
+
+// Макросы
+#define MAX(a,b) ( ((a) > (b)) ? (a) : (b) )
 
 // Global variables
 #define IN_V PINB.3             // Вход №1 (ванная)
 #define IN_T PINB.4             // Вход №2 (туалет)
 #define OUT PORTB.0             // Выход 1 (вкл. вентилятор)
 #define SELF_PWR PORTB.1        // Выход 2 (вкл. подхват питания)
-#define DELAY_TO_ON_V 60        // Задержка от вкл. света в ванной (IN_V) до вкл. вентилятора (сек.)
-#define DELAY_TO_ON_T 20        // Задержка от вкл. света в туалете (IN_T) до вкл. вентилятора (сек.)
-#define DELAY_TO_OFF_V 230      // Задержка после выкл. света в ванной до выкл. вентилятора (сек.)
-#define DELAY_TO_OFF_T 80       // Задержка после выкл. света в туалете до выкл. вентилятора (сек.)
-unsigned int cnt = 0;           // Счетчик "тиков" (переполнений таймера)
-unsigned char in_v_cnt = 0;     // Счетчик переключений IN_V
-unsigned char in_t_cnt = 0;     // Счетчик переключений IN_T
-bit in_v_rev = 0;               // Флаг переключения IN_V
-bit in_t_rev = 0;               // Флаг переключения IN_T
+#define DELAY_TO_ON_V 160       // Задержка от вкл. света в ванной (IN_V) до вкл. вентилятора (сек.)
+#define DELAY_TO_ON_T 30        // Задержка от вкл. света в туалете (IN_T) до вкл. вентилятора (сек.)
+#define DELAY_TO_OFF_V 420      // Задержка после выкл. света в ванной до выкл. вентилятора (сек.)
+#define DELAY_TO_OFF_T 90       // Задержка после выкл. света в туалете до выкл. вентилятора (сек.)
+volatile unsigned int cnt = 0;  // Счётчик "тиков" (переполнений таймера)
+unsigned char in_v_cnt = 0;     // Счётчик переключений IN_V
+unsigned char in_t_cnt = 0;     // Счётчик переключений IN_T
 bit in_v_on = 0;                // Признак включения IN_V
 bit in_t_on = 0;                // Признак включения IN_T
 bit in_v_after_t = 0;           // Признак включения света в ванной после туалета
-unsigned int time_cnt = 0;      // Счетчик секунд
+unsigned int time_cnt = 0;      // Счётчик секунд
 unsigned char last_off = 0;     // Метка последнего выключенного (1 - IN_V; 2 - IN_T)
-bit time_cnt_res = 0;           // Флаг сброса счетчика секунд
+bit time_cnt_res = 0;           // Флаг сброса счётчика секунд
 
 // Timer 0 overflow interrupt service routine
 interrupt [TIM0_OVF] void timer0_ovf_isr(void)
@@ -72,26 +73,28 @@ void start_timer(void)
 
 void check_in_v(void)
 {
-    if (IN_V && !in_v_rev) {
-        in_v_cnt++;
-        in_v_rev = 1;
+    static bit prev_state = 0;
+
+    if (IN_V != prev_state) {
+        prev_state = IN_V;
+
+        if (IN_V) {
+            in_v_cnt++;
+        }
     }
-    if (!IN_V && in_v_rev) {
-        in_v_rev = 0;
-    }
-    delay_us(100);
 }
     
 void check_in_t(void)
 {
-    if (IN_T && !in_t_rev) {
-        in_t_cnt++;
-        in_t_rev = 1;
+    static bit prev_state = 0;
+
+    if (IN_T != prev_state) {
+        prev_state = IN_T;
+
+        if (IN_T) {
+            in_t_cnt++;
+        }
     }
-    if (!IN_T && in_t_rev) {
-        in_t_rev = 0;
-    }
-    delay_us(100);
 }
 
 // Отключение питания с ожиданием завершения переходных процессов
@@ -105,14 +108,14 @@ void power_off(void)
     time_cnt_res = 0;
     in_v_cnt = 0;
     in_t_cnt = 0;
-    delay_ms(2000);
-//    #asm("sleep");
+    delay_ms(1000);
+    #asm("sleep");
 }
 
 void main(void)
 {
     // Максимальная задержка на включение
-    unsigned int max_delay_to_on = max(DELAY_TO_ON_V, DELAY_TO_ON_T);
+    unsigned int max_delay_to_on = MAX(DELAY_TO_ON_V, DELAY_TO_ON_T);
     
 	// Crystal Oscillator division factor: 8
     #pragma optsize-
@@ -167,12 +170,23 @@ void main(void)
 	// ADC initialization
 	// ADC disabled
 	ADCSRA = (0 << ADEN) | (0 << ADSC) | (0 << ADATE) | (0 << ADIF) | (0 << ADIE) | (0 << ADPS2) | (0 << ADPS1) | (0 << ADPS0);
-                 
-    // Включаем подхват питания
-    SELF_PWR = 1;
+    
+    // Watchdog Timer initialization
+    // Watchdog Timer Prescaler: OSC/512k (~4 сек.)
+    // Watchdog timeout action: Reset
+    #pragma optsize-
+    #asm("wdr")
+    WDTCR|=(1<<WDCE) | (1<<WDE);
+    WDTCR=(0<<WDTIF) | (0<<WDTIE) | (1<<WDP3) | (0<<WDCE) | (1<<WDE) | (0<<WDP2) | (0<<WDP1) | (0<<WDP0);
+    #ifdef _OPTIMIZE_SIZE_
+    #pragma optsize+
+    #endif
 
 	// Globally enable interrupts
     #asm("sei")
+    
+    // Включаем подхват питания
+    SELF_PWR = 1;
 
 	while (1) { 
 
@@ -216,30 +230,36 @@ void main(void)
                 in_t_on = 0;
             }
             
-            // Сбрасываем счетчики переключений
+            // Сбрасываем счётчики переключений
             in_v_cnt = 0;
             in_t_cnt = 0;
             
             // Отключение схемы если свет отключили до истечения задержки включения
-            if (!OUT && !in_v_on && !in_t_on && time_cnt < max_delay_to_on) {
+            if ( (!OUT) && (!in_v_on) && (!in_t_on) && (time_cnt < max_delay_to_on) ) {
                 power_off();
             }
+            
+            // Обслуживаем WDT
+            #asm("wdr");
         }
                     
         // Если включен любой свет,
         // сбрасываем признак последнего выключенного
-        // и флаг сброса счетчика секунд
+        // и флаг сброса счётчика секунд
         if (in_v_on || in_t_on) {
             // Если мы уже выключили самоподхват - включаем его
             if (!SELF_PWR) {
                 SELF_PWR = 1;
             }
             // Если включили свет в ванной сразу после туалета -
-            // устанавливаем соответствующий признак и сбрасываем счетчик секунд
-            if (in_v_on && !in_v_after_t && last_off == 2) {
+            // устанавливаем соответствующий признак и сбрасываем счётчик секунд
+            if ( in_v_on && (!in_v_after_t) && (last_off == 2) ) {
                 in_v_after_t = 1;
                 time_cnt = 0;
-            } else if (in_v_on && in_v_after_t && last_off == 2) {
+            // Если при включенном свете в ванной был включен и выключен свет в туалете,
+            // ИЛИ таймер стал больше четырёхкратной максимальной задержки на включение -
+            // сбрасываем признак включения света в ванной после туалета
+            } else if ( in_v_on && in_v_after_t && (last_off == 2 || time_cnt >= max_delay_to_on * 4) ) {
                 in_v_after_t = 0;
             }
             time_cnt_res = in_v_after_t;
@@ -249,7 +269,7 @@ void main(void)
         // Включение вентилятора
         // если он не включен,
         // включен свет в ванной
-        // и счетчик секунд уже больше задержки включения
+        // и счётчик секунд уже больше задержки включения
         if (!OUT && in_v_on && time_cnt >= DELAY_TO_ON_V) {
             OUT = 1;
         }
@@ -257,14 +277,14 @@ void main(void)
         // Включение вентилятора
         // если он не включен,
         // включен свет в туалете
-        // и счетчик секунд уже больше задержки включения
+        // и счётчик секунд уже больше задержки включения
         if (!OUT && in_t_on && time_cnt >= DELAY_TO_ON_T) {
             OUT = 1;
         }
 
         // Если есть признак последнего выключенного
-        // и счетчик секунд не сброшен - 
-        // сбрасываем счетчик секунд и устанавиливаем флаг сброса счетчика секунд
+        // и счётчик секунд не сброшен - 
+        // сбрасываем счётчик секунд и устанавиливаем флаг сброса счётчика секунд
         if ((last_off == 1 || last_off == 2) && !time_cnt_res) {
             time_cnt = 0;
             time_cnt_res = 1;
@@ -273,14 +293,14 @@ void main(void)
         // Отключение вентилятора и самой схемы: 
         // если вентилятор включен,
         // есть признак выключенного
-        // и счетчик секунд больше необходимой задержки
+        // и счётчик секунд больше необходимой задержки
         
-        if (OUT && last_off == 1 && time_cnt >= DELAY_TO_OFF_V) {
+        if ( OUT && (last_off == 1) && (time_cnt >= DELAY_TO_OFF_V) ) {
             OUT = 0;
             power_off();
         }
         
-        if (OUT && last_off == 2 && time_cnt >= DELAY_TO_OFF_T) {
+        if ( OUT && (last_off == 2) && (time_cnt >= DELAY_TO_OFF_T) ) {
             OUT = 0;
             power_off();
         }
